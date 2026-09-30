@@ -30,8 +30,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/screening" className="text-xs px-2.5 py-1.5 rounded-full text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
                 検診
               </Link>
+              <Link href="/standards" className="text-xs px-2.5 py-1.5 rounded-full text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                世界基準
+              </Link>
               <Link href="/trusted-people" className="text-xs px-2.5 py-1.5 rounded-full text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
-                信頼する人
+                つながり
               </Link>
               <Link href="/admin" className="text-xs px-2.5 py-1.5 rounded-full text-slate-500 hover:bg-slate-100 transition-colors">
                 管理

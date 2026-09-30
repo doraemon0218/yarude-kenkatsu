@@ -81,12 +81,28 @@ export default function AdminPage() {
     <div className="space-y-5">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">管理・分析ダッシュボード</h1>
-          <p className="text-sm text-slate-500 mt-0.5">サービスの有効性と通知方法の最適化を追跡</p>
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-medium">🏛️ 門真市 健康増進課 専用</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-800">行政職員ダッシュボード</h1>
+          <p className="text-sm text-slate-500 mt-0.5">YARUDE健活の受診勧奨効果・RCT結果・政策立案データ</p>
         </div>
         <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
           デモデータ
         </Badge>
+      </div>
+
+      {/* 行政向けアクション */}
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          { label: "がん検診予約ページ", url: "https://www.city.kadoma.osaka.jp/kenko_fukushi/kenko/2/4105.html", icon: "🔬" },
+          { label: "健康増進課 公式", url: "https://www.city.kadoma.osaka.jp/kenko_fukushi/kenko/index.html", icon: "🏛️" },
+        ].map((item) => (
+          <a key={item.url} href={item.url} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 hover:border-blue-400 hover:bg-blue-50 transition-all">
+            <span>{item.icon}</span>{item.label} →
+          </a>
+        ))}
       </div>
 
       {/* KPI summary */}

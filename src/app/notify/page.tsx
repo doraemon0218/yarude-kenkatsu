@@ -63,11 +63,32 @@ export default function NotifyPage() {
 
   const nudgeTemplate = NUDGE_MESSAGES.find((n) => n.id === selectedNudge)!;
 
+  const buildMailtoLink = (person: (typeof trustedPeople)[0]) => {
+    const senderName = user ? `${user.age}歳の知人` : "知人";
+    const letterUrl = `https://yarude-kenkatsu.vercel.app/letter?from=${encodeURIComponent(senderName)}`;
+    const nudge = NUDGE_MESSAGES.find((n) => n.id === selectedNudge)!;
+    const subject = encodeURIComponent("【がん検診のご案内】あなたに届いてほしいお知らせ");
+    const body = encodeURIComponent(
+      `${person.name} さんへ\n\n` +
+      nudge.message(person.name) + "\n\n" +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `あなたへの検診案内（クリックして開いてください）：\n` +
+      letterUrl + "\n\n" +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `このリンクには、あなたに受けていただきたいがん検診と\n` +
+      `門真市での受け方・費用・予約方法がまとめられています。\n\n` +
+      `YARUDE健活 | 門真市共創プロジェクト\n` +
+      `https://yarude-kenkatsu.vercel.app`
+    );
+    return `mailto:${person.contact}?subject=${subject}&body=${body}`;
+  };
+
   const handleSend = () => {
     if (selectedPeople.length === 0 || !user) return;
     const screenings = getRecommendedScreenings(user.age, user.gender);
 
     selectedPeople.forEach((pid) => {
+      const person = trustedPeople.find((p) => p.id === pid)!;
       const log: NotificationLog = {
         id: crypto.randomUUID(),
         userId: user.id,
@@ -77,6 +98,10 @@ export default function NotifyPage() {
         sentAt: new Date().toISOString(),
       };
       addNotificationLog(log);
+
+      if (person.contactType === "email" && selectedMethod === "email") {
+        window.location.href = buildMailtoLink(person);
+      }
     });
     setSent(true);
   };
@@ -229,13 +254,41 @@ export default function NotifyPage() {
             </CardContent>
           </Card>
 
+          {selectedMethod === "email" && selectedPeople.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700 space-y-2">
+              <p className="font-medium">📧 メール送信の手順</p>
+              <div className="flex items-start gap-2">
+                <span className="flex-shrink-0 w-5 h-5 bg-violet-600 text-white rounded-full text-xs flex items-center justify-center font-bold">1</span>
+                <div>
+                  <p className="font-medium text-violet-700">PDFをダウンロードする</p>
+                  <p className="text-slate-500">検診案内を見やすいPDFとして保存します。</p>
+                  <a
+                    href={`/letter?from=${encodeURIComponent(user ? `${user.age}歳の知人` : "知人")}`}
+                    target="_blank"
+                    className="mt-1 inline-block bg-violet-100 text-violet-700 hover:bg-violet-200 px-2 py-1 rounded font-medium transition-colors"
+                  >
+                    📄 案内レターページを開く（PDFダウンロード）
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="flex-shrink-0 w-5 h-5 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center font-bold">2</span>
+                <div>
+                  <p className="font-medium text-blue-700">メールアプリで送信する</p>
+                  <p className="text-slate-500">件名・本文が自動入力されます。ダウンロードしたPDFを添付して送信してください。</p>
+                </div>
+              </div>
+            </div>
+          )}
           <Button
             onClick={handleSend}
             disabled={selectedPeople.length === 0}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 text-base font-medium"
           >
             {selectedPeople.length > 0
-              ? `${selectedPeople.length}人に送る →`
+              ? selectedMethod === "email"
+                ? `📧 メールを作成して送る（${selectedPeople.length}人）`
+                : `${selectedPeople.length}人に送る →`
               : "送る相手を選んでください"}
           </Button>
         </>
