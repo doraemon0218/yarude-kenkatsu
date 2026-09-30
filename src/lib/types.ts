@@ -68,6 +68,15 @@ export interface TrustedPerson {
   addedAt: string;
 }
 
+export interface Citation {
+  org: string;
+  orgEn?: string;
+  title: string;
+  year: string;
+  url: string;
+  grade?: string;
+}
+
 export interface ScreeningRecommendation {
   id: string;
   cancerType: string;
@@ -81,6 +90,7 @@ export interface ScreeningRecommendation {
   evidence: string;
   symptoms: string[];
   plainLanguage: string;
+  citations: Citation[];
 }
 
 export interface Facility {

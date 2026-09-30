@@ -104,9 +104,34 @@ export default function ScreeningPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-xs font-medium text-slate-500 mb-1">根拠・出典</p>
-                    <p className="text-xs text-slate-600">{s.evidence}</p>
+                  <div className="bg-slate-50 rounded-lg p-3 space-y-2">
+                    <p className="text-xs font-medium text-slate-500">根拠・出典</p>
+                    <p className="text-xs text-slate-600 leading-relaxed">{s.evidence}</p>
+                    <div className="space-y-1.5 pt-1 border-t border-slate-200">
+                      {s.citations.map((c) => (
+                        <a
+                          key={c.url}
+                          href={c.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-start gap-2 group"
+                        >
+                          <span className="text-xs text-slate-400 mt-0.5 flex-shrink-0">🔗</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs text-emerald-700 group-hover:underline font-medium">
+                              {c.org}
+                            </span>
+                            <span className="text-xs text-slate-400 ml-1">（{c.year}）</span>
+                            <p className="text-xs text-slate-500 truncate">{c.title}</p>
+                            {c.grade && (
+                              <span className="inline-block text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 rounded px-1.5 py-0.5 mt-0.5">
+                                {c.grade}
+                              </span>
+                            )}
+                          </div>
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
