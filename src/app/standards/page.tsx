@@ -230,10 +230,53 @@ const GUIDELINES: GuidelineRow[] = [
 ];
 
 const GAP_STYLES = {
-  aligned: { bg: "bg-emerald-50 border-emerald-200", badge: "bg-emerald-100 text-emerald-700", label: "一致" },
-  minor: { bg: "bg-amber-50 border-amber-200", badge: "bg-amber-100 text-amber-700", label: "軽微な差異" },
-  significant: { bg: "bg-red-50 border-red-200", badge: "bg-red-100 text-red-700", label: "重要な乖離" },
+  aligned: { bg: "bg-emerald-50 border-emerald-200", badge: "bg-emerald-100 text-emerald-700", label: "一致", dot: "bg-emerald-400", row: "border-l-emerald-400" },
+  minor: { bg: "bg-amber-50 border-amber-200", badge: "bg-amber-100 text-amber-700", label: "軽微な差異", dot: "bg-amber-400", row: "border-l-amber-400" },
+  significant: { bg: "bg-red-50 border-red-200", badge: "bg-red-100 text-red-700", label: "重要な乖離", dot: "bg-red-400", row: "border-l-red-400" },
 };
+
+const TABLE_ROWS: { cancer: string; japan: string; world: string; worldSub: string; gap: "aligned" | "minor" | "significant"; note: string }[] = [
+  {
+    cancer: "大腸がん",
+    japan: "便潜血（FOBT）/ 40歳〜 / 毎年",
+    world: "大腸内視鏡 / 45歳〜",
+    worldSub: "FOBT・CT colonographyも可",
+    gap: "minor",
+    note: "日本は5年早く開始。世界標準は内視鏡が高精度",
+  },
+  {
+    cancer: "肺がん",
+    japan: "胸部X線 / 40歳〜 / 毎年",
+    world: "低線量CT（LDCT）/ 50歳〜喫煙者",
+    worldSub: "X線はスクリーニング非推奨",
+    gap: "significant",
+    note: "検査法に大きな差。LDCTは早期検出率が高い",
+  },
+  {
+    cancer: "胃がん",
+    japan: "内視鏡・X線 / 50歳〜 / 2年",
+    world: "（推奨なし）",
+    worldSub: "東アジア以外は罹患率低く非推奨",
+    gap: "minor",
+    note: "日本・韓国独自の推奨。ピロリ菌感染率が根拠",
+  },
+  {
+    cancer: "乳がん",
+    japan: "マンモグラフィ / 40歳〜 / 2年",
+    world: "マンモグラフィ / 40歳〜 / 2年",
+    worldSub: "2024年USPSTF改訂で日米一致",
+    gap: "aligned",
+    note: "2024年以降ほぼ一致。日本の基準が先行していた",
+  },
+  {
+    cancer: "子宮頸がん",
+    japan: "細胞診 / 20歳〜 / 2年",
+    world: "HPV検査 / 30歳〜 / 5〜10年",
+    worldSub: "細胞診からHPV検査への移行を推奨",
+    gap: "significant",
+    note: "検査法に大きな差。HPV検査は感度が高く間隔も長い",
+  },
+];
 
 export default function StandardsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -274,6 +317,47 @@ export default function StandardsPage() {
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>一致：日本と国際基準がほぼ同等</span>
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>軽微：年齢・間隔に差があるが臨床的許容範囲内</span>
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-400 inline-block"></span>乖離：検査法や対象が大きく異なる</span>
+      </div>
+
+      {/* Summary comparison table */}
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table className="w-full text-xs min-w-[520px]">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50">
+              <th className="text-left px-3 py-2.5 font-medium text-slate-500 w-24">がん種</th>
+              <th className="text-left px-3 py-2.5 font-medium text-slate-500">🇯🇵 日本（厚労省）</th>
+              <th className="text-left px-3 py-2.5 font-medium text-slate-500">🌍 世界標準</th>
+              <th className="text-left px-3 py-2.5 font-medium text-slate-500 w-20">差</th>
+            </tr>
+          </thead>
+          <tbody>
+            {TABLE_ROWS.map((row, i) => {
+              const style = GAP_STYLES[row.gap];
+              return (
+                <tr
+                  key={row.cancer}
+                  className={`border-l-4 ${style.row} ${i !== TABLE_ROWS.length - 1 ? "border-b border-slate-100" : ""}`}
+                >
+                  <td className="px-3 py-3 font-semibold text-slate-700 whitespace-nowrap">{row.cancer}</td>
+                  <td className="px-3 py-3 text-slate-600 leading-relaxed">{row.japan}</td>
+                  <td className="px-3 py-3 text-slate-600 leading-relaxed">
+                    <span className={row.gap === "significant" ? "font-semibold text-red-700" : ""}>{row.world}</span>
+                    <br />
+                    <span className="text-slate-400">{row.worldSub}</span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className={`inline-block px-1.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${style.badge}`}>
+                      {style.label}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <p className="text-xs text-slate-400 px-3 py-2 border-t border-slate-100">
+          ↓ 各がん種をタップすると詳細・自費受診先が確認できます
+        </p>
       </div>
 
       {/* Guidelines list */}
