@@ -24,14 +24,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <span className="text-xs text-slate-400 hidden sm:block">門真市共創プロジェクト</span>
             </Link>
             <nav className="flex items-center gap-1">
+              <Link href="/demo" className="text-xs px-2.5 py-1.5 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors font-medium">
+                デモ
+              </Link>
               <Link href="/screening" className="text-xs px-2.5 py-1.5 rounded-full text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
-                検診を調べる
+                検診
               </Link>
               <Link href="/trusted-people" className="text-xs px-2.5 py-1.5 rounded-full text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
                 信頼する人
               </Link>
               <Link href="/admin" className="text-xs px-2.5 py-1.5 rounded-full text-slate-500 hover:bg-slate-100 transition-colors">
-                管理画面
+                管理
               </Link>
             </nav>
           </div>
