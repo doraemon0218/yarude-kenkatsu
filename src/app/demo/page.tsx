@@ -65,6 +65,42 @@ export default function DemoPage() {
         </p>
       </div>
 
+      {/* ONE-CLICK LOGIN — prominent at top */}
+      <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-4 space-y-3">
+        <p className="text-sm font-bold text-emerald-800 text-center">
+          どちらかのアカウントでログイン
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {DEMO_USER_META.map((meta) => (
+            <button
+              key={meta.id}
+              onClick={() => { loadDemoUser(meta.id); router.push("/screening"); }}
+              className={`flex flex-col items-center gap-1.5 py-4 px-3 rounded-xl border-2 font-medium text-sm transition-all
+                ${activeUser === meta.id
+                  ? "border-emerald-600 bg-emerald-600 text-white shadow-md scale-105"
+                  : "border-emerald-300 bg-white text-slate-700 hover:border-emerald-500 hover:bg-emerald-50"
+                }`}
+            >
+              <span className="text-3xl">{meta.emoji}</span>
+              <span className="font-bold">{meta.name}</span>
+              <span className="text-xs opacity-75">{meta.desc}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full mt-1 ${
+                activeUser === meta.id
+                  ? "bg-white/20 text-white"
+                  : "bg-emerald-100 text-emerald-700"
+              }`}>
+                {activeUser === meta.id ? "✓ ログイン中" : "ワンクリックでログイン"}
+              </span>
+            </button>
+          ))}
+        </div>
+        {activeUser && (
+          <p className="text-xs text-emerald-700 text-center">
+            ↑ ログイン後、上のナビから「検診」「信頼する人」「管理」を閲覧できます
+          </p>
+        )}
+      </div>
+
       {/* Two users */}
       <div className="grid grid-cols-2 gap-3">
         {DEMO_USER_META.map((meta) => {
@@ -247,33 +283,20 @@ export default function DemoPage() {
         </CardContent>
       </Card>
 
-      {/* User switch CTA */}
-      <div className="space-y-3">
-        <p className="text-sm text-center text-slate-600 font-medium">
-          どちらかの視点でアプリを体験できます
-        </p>
-        <div className="grid grid-cols-2 gap-3">
+      {/* Bottom login repeat */}
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+        <p className="text-xs text-slate-500 text-center font-medium">↑ ページ上部のログインボタンからアプリを体験できます</p>
+        <div className="grid grid-cols-2 gap-2">
           {DEMO_USER_META.map((meta) => (
-            <Button
+            <button
               key={meta.id}
-              variant={activeUser === meta.id ? "default" : "outline"}
-              className={`w-full rounded-xl ${
-                activeUser === meta.id
-                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                  : ""
-              }`}
-              onClick={() => {
-                handleSwitchUser(meta.id);
-                handleGoToApp();
-              }}
+              onClick={() => { loadDemoUser(meta.id); router.push("/screening"); }}
+              className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 hover:bg-emerald-50 hover:border-emerald-400 transition-all"
             >
-              {meta.emoji} {meta.name}の視点で見る
-            </Button>
+              {meta.emoji} {meta.name}
+            </button>
           ))}
         </div>
-        <p className="text-xs text-center text-slate-400">
-          ボタンを押すと、その人の設定でアプリが起動します
-        </p>
       </div>
     </div>
   );
