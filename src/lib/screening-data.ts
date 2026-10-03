@@ -471,11 +471,29 @@ export function buildBarriersFromProfile(params: {
 }
 
 export const OCCUPATION_LABELS: Record<string, string> = {
-  employee_large: "会社員（大企業・組合健保）",
-  employee_small: "会社員（中小企業・協会けんぽ）",
+  employee_large: "会社員・公務員（大きな会社）",
+  employee_small: "会社員（中小企業・個人事業所）",
   self_employed: "自営業・フリーランス",
   part_time: "パートタイム・アルバイト",
-  other: "その他",
+  other: "専業主婦/主夫・その他",
+};
+
+// 職業から職場健診の有無を自動推定できるか
+export const OCCUPATION_HAS_WORKPLACE_CHECKUP: Partial<Record<string, boolean | null>> = {
+  employee_large: null,   // 大企業は多くが職場健診あり → 確認が必要
+  employee_small: null,   // 中小は不明 → 確認が必要
+  self_employed: false,   // 自営業は確実にない
+  part_time: false,       // パートは確実にない
+  other: null,            // 不明
+};
+
+// 門真市の公的検診費用（参考値）
+export const KADOMA_SCREENING_COSTS: Record<string, string> = {
+  colon: "300円",
+  lung: "100円",
+  gastric: "800円",
+  breast: "400円",
+  cervical: "400円",
 };
 
 export const FAMILY_STRUCTURE_LABELS: Record<string, string> = {

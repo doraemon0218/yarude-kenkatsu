@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getUser } from "@/lib/store";
-import { getRecommendedScreenings } from "@/lib/screening-data";
+import { getRecommendedScreenings, KADOMA_SCREENING_COSTS } from "@/lib/screening-data";
 import type { UserProfile, ScreeningRecommendation } from "@/lib/types";
 
 export default function ScreeningPage() {
@@ -36,6 +36,12 @@ export default function ScreeningPage() {
     cervical: "bg-rose-50 border-rose-200 text-rose-700",
   };
 
+  // 費用アクセスが困難な層か（自営業・職場健診なし）
+  const isCostSensitive =
+    user.occupation === "self_employed" ||
+    user.occupation === "part_time" ||
+    user.hasWorkplaceCheckup === false;
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -49,17 +55,18 @@ export default function ScreeningPage() {
         </p>
       </div>
 
-      {/* Evidence note */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 flex gap-3">
-        <span className="text-xl flex-shrink-0">📋</span>
-        <div className="text-xs text-slate-600 space-y-1">
-          <p className="font-medium text-slate-700">根拠について</p>
-          <p>
-            以下の検診は厚生労働省「がん予防重点健康教育及びがん検診実施のための指針」（2023年改訂）に基づいています。
-            「受けると、がんで亡くなる確率が下がる」と科学的に確かめられた検診のみを表示しています。
-          </p>
+      {/* 費用アクセスが困難な層へのコストバナー */}
+      {isCostSensitive && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex gap-2.5 items-center">
+          <span className="text-xl flex-shrink-0">💚</span>
+          <div>
+            <p className="text-xs font-medium text-emerald-800">門真市の補助で安く受けられます</p>
+            <p className="text-xs text-emerald-700 mt-0.5">
+              大腸がん <strong>300円</strong> · 肺がん <strong>100円</strong> · 胃がん <strong>800円</strong>
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Screening list */}
       <div className="space-y-3">
@@ -77,6 +84,11 @@ export default function ScreeningPage() {
                       <Badge variant="outline" className={`text-xs ${cancerColors[s.id] || ""}`}>
                         {s.intervalLabel}
                       </Badge>
+                      {KADOMA_SCREENING_COSTS[s.id] && (
+                        <Badge variant="outline" className="text-xs bg-emerald-50 border-emerald-200 text-emerald-700">
+                          {KADOMA_SCREENING_COSTS[s.id]}
+                        </Badge>
+                      )}
                       {s.targetGender === "female_only" && (
                         <Badge variant="outline" className="text-xs bg-pink-50 border-pink-200 text-pink-700">
                           女性のみ
@@ -154,10 +166,13 @@ export default function ScreeningPage() {
         </Link>
       </div>
 
-      <p className="text-xs text-slate-400 text-center">
-        この情報は医師の診断を代替するものではありません。
-        受診の際は医療機関にご確認ください。
-      </p>
+      {/* 根拠ノート：下部に移動・簡潔化 */}
+      <div className="border border-slate-200 rounded-xl p-3 flex gap-2.5">
+        <span className="text-base flex-shrink-0">📋</span>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          厚生労働省「がん予防重点健康教育及びがん検診実施のための指針」（2023年改訂）準拠。科学的根拠のある検診のみを表示。この情報は医師の診断を代替するものではありません。
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { saveUser } from "@/lib/store";
 import type { UserProfile, Gender, OccupationType, FamilyStructure, MessageFrameType } from "@/lib/types";
 import {
   OCCUPATION_LABELS,
+  OCCUPATION_HAS_WORKPLACE_CHECKUP,
   FAMILY_STRUCTURE_LABELS,
   buildBarriersFromProfile,
   type MindsetType,
@@ -24,7 +25,7 @@ const MINDSET_OPTIONS: Array<{
   {
     id: "curious",
     emoji: "💭",
-    label: "気になるけど、まだ受けたことがない",
+    label: "気になるけど、受けに行けていない",
     sub: "どこで受けるかよくわからない",
   },
   {
@@ -59,6 +60,11 @@ function assignRctArm(): {
   };
 }
 
+// 職場健診の確認が必要な職業か（自営業・パートは不要）
+function needsWorkplaceQuestion(occ: OccupationType | ""): boolean {
+  return OCCUPATION_HAS_WORKPLACE_CHECKUP[occ] === null || occ === "";
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -76,6 +82,19 @@ export default function HomePage() {
   // Step 2
   const [lastScreeningYear, setLastScreeningYear] = useState<string>("");
   const [mindset, setMindset] = useState<MindsetType | null>(null);
+
+  // 職業選択時に職場健診を自動推定
+  useEffect(() => {
+    const inferred = OCCUPATION_HAS_WORKPLACE_CHECKUP[occupation];
+    if (inferred === false) {
+      // 自営業・パートは確実に「なし」
+      setHasWorkplaceCheckup(false);
+    } else if (inferred === undefined) {
+      // 職業未選択はリセット
+      setHasWorkplaceCheckup(null);
+    }
+    // inferred === null の場合は変更しない（ユーザーに選ばせる）
+  }, [occupation]);
 
   const handleStart = () => {
     if (!age || !gender) return;
@@ -201,7 +220,7 @@ export default function HomePage() {
         <Card className="border-slate-200">
           <CardContent className="p-6 space-y-5">
             <p className="text-xs text-slate-500 bg-slate-50 rounded-lg p-3">
-              この情報は、どのような背景を持つ方に検診が届きにくいかを分析し、門真市の施策改善に使います。個人の特定には使いません。
+              この情報は、門真市で検診が届きにくい方の背景分析に使います。個人の特定には使いません。
             </p>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">お仕事の種類</label>
@@ -221,25 +240,30 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">職場でがん検診を受けられますか？</label>
-              <p className="text-xs text-slate-400">※ 市の検診との重複確認・政策分析に使います</p>
-              <div className="flex gap-2">
-                {([true, false] as const).map((v) => (
-                  <button
-                    key={String(v)}
-                    onClick={() => setHasWorkplaceCheckup(v)}
-                    className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
-                      hasWorkplaceCheckup === v
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                        : "border-slate-200 text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    {v ? "はい（受けられる）" : "ない・わからない"}
-                  </button>
-                ))}
+
+            {/* 職場健診の質問：会社員のみ表示（自営業・パートは自動推定） */}
+            {needsWorkplaceQuestion(occupation) && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">職場でがん検診を受けられますか？</label>
+                <p className="text-xs text-slate-400">※ 市の検診との重複確認に使います</p>
+                <div className="flex gap-2">
+                  {([true, false] as const).map((v) => (
+                    <button
+                      key={String(v)}
+                      onClick={() => setHasWorkplaceCheckup(v)}
+                      className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                        hasWorkplaceCheckup === v
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                          : "border-slate-200 text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      {v ? "はい（ある）" : "ない・わからない"}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">家族構成</label>
               <div className="grid grid-cols-2 gap-2">
@@ -307,13 +331,13 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* マインドセット質問（間接的・低負荷） */}
+            {/* マインドセット質問 */}
             <div className="space-y-3">
               <div>
                 <p className="text-sm font-medium text-slate-700">
                   検診について、今のあなたに一番近いのは？
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">ひとつだけ選んでください（答えにくければ飛ばせます）</p>
+                <p className="text-xs text-slate-400 mt-0.5">ひとつだけ。答えにくければそのまま進めます。</p>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 {MINDSET_OPTIONS.map((opt) => (
