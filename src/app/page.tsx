@@ -4,34 +4,92 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { saveUser } from "@/lib/store";
-import type { UserProfile, Gender, OccupationType, FamilyStructure, BarrierType } from "@/lib/types";
-import { BARRIER_LABELS, OCCUPATION_LABELS, FAMILY_STRUCTURE_LABELS } from "@/lib/screening-data";
+import type { UserProfile, Gender, OccupationType, FamilyStructure, MessageFrameType } from "@/lib/types";
+import {
+  OCCUPATION_LABELS,
+  FAMILY_STRUCTURE_LABELS,
+  buildBarriersFromProfile,
+  type MindsetType,
+} from "@/lib/screening-data";
 
-const STEPS = ["基本情報", "生活背景", "受診歴・障壁"] as const;
+const STEPS = ["基本情報", "生活背景", "今の気持ち"] as const;
+
+const MINDSET_OPTIONS: Array<{
+  id: MindsetType;
+  emoji: string;
+  label: string;
+  sub: string;
+}> = [
+  {
+    id: "curious",
+    emoji: "💭",
+    label: "気になるけど、まだ受けたことがない",
+    sub: "どこで受けるかよくわからない",
+  },
+  {
+    id: "procrastinate",
+    emoji: "⏰",
+    label: "毎年「来年こそ」と思っている",
+    sub: "つい後回しにしてしまう",
+  },
+  {
+    id: "afraid",
+    emoji: "😰",
+    label: "結果が少し怖い・不安がある",
+    sub: "悪いことが見つかりそうで",
+  },
+  {
+    id: "none",
+    emoji: "🙂",
+    label: "特に気にしていない",
+    sub: "症状がないから大丈夫かなと",
+  },
+];
+
+const MESSAGE_FRAMES: MessageFrameType[] = ["loss_frame", "gain_frame", "social_norm", "authority"];
+
+function assignRctArm(): {
+  notificationGroup: "self_only" | "self_and_family";
+  messageFrame: MessageFrameType;
+} {
+  return {
+    notificationGroup: Math.random() < 0.5 ? "self_only" : "self_and_family",
+    messageFrame: MESSAGE_FRAMES[Math.floor(Math.random() * MESSAGE_FRAMES.length)],
+  };
+}
 
 export default function HomePage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
+
+  // Step 0
   const [age, setAge] = useState("");
   const [gender, setGender] = useState<Gender | "">("");
+
+  // Step 1
   const [occupation, setOccupation] = useState<OccupationType | "">("");
+  const [hasWorkplaceCheckup, setHasWorkplaceCheckup] = useState<boolean | null>(null);
   const [familyStructure, setFamilyStructure] = useState<FamilyStructure | "">("");
   const [healthAwareness, setHealthAwareness] = useState<number>(3);
-  const [lastScreeningYear, setLastScreeningYear] = useState<string>("");
-  const [barriers, setBarriers] = useState<BarrierType[]>([]);
 
-  const toggleBarrier = (b: BarrierType) => {
-    setBarriers((prev) =>
-      prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]
-    );
-  };
+  // Step 2
+  const [lastScreeningYear, setLastScreeningYear] = useState<string>("");
+  const [mindset, setMindset] = useState<MindsetType | null>(null);
 
   const handleStart = () => {
     if (!age || !gender) return;
     const ageNum = parseInt(age);
     if (isNaN(ageNum) || ageNum < 18 || ageNum > 100) return;
+
+    const { notificationGroup, messageFrame } = assignRctArm();
+
+    const barriers = buildBarriersFromProfile({
+      occupation,
+      hasWorkplaceCheckup,
+      familyStructure,
+      mindset,
+    });
 
     const user: UserProfile = {
       id: crypto.randomUUID(),
@@ -40,10 +98,11 @@ export default function HomePage() {
       occupation: (occupation || "other") as OccupationType,
       familyStructure: (familyStructure || "other") as FamilyStructure,
       healthAwarenessScore: healthAwareness as 1 | 2 | 3 | 4 | 5,
+      hasWorkplaceCheckup,
       lastScreeningYear: lastScreeningYear ? parseInt(lastScreeningYear) : undefined,
       barriers,
-      notificationGroup:
-        Math.random() < 0.5 ? "self_only" : "self_and_family",
+      notificationGroup,
+      messageFrame,
       registeredAt: new Date().toISOString(),
     };
     saveUser(user);
@@ -71,7 +130,13 @@ export default function HomePage() {
         {STEPS.map((label, i) => (
           <div key={i} className="flex items-center gap-2">
             <div className={`flex items-center gap-1.5 ${i <= step ? "text-emerald-600" : "text-slate-400"}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i < step ? "bg-emerald-600 text-white" : i === step ? "bg-emerald-100 text-emerald-700 ring-2 ring-emerald-400" : "bg-slate-100 text-slate-400"}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                i < step
+                  ? "bg-emerald-600 text-white"
+                  : i === step
+                  ? "bg-emerald-100 text-emerald-700 ring-2 ring-emerald-400"
+                  : "bg-slate-100 text-slate-400"
+              }`}>
                 {i < step ? "✓" : i + 1}
               </div>
               <span className="text-xs hidden sm:block">{label}</span>
@@ -136,7 +201,7 @@ export default function HomePage() {
         <Card className="border-slate-200">
           <CardContent className="p-6 space-y-5">
             <p className="text-xs text-slate-500 bg-slate-50 rounded-lg p-3">
-              この情報は、どのような背景を持つ方に検診が届きやすいかを分析するために使います。個人を特定する用途には使いません。
+              この情報は、どのような背景を持つ方に検診が届きにくいかを分析し、門真市の施策改善に使います。個人の特定には使いません。
             </p>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">お仕事の種類</label>
@@ -152,6 +217,25 @@ export default function HomePage() {
                     }`}
                   >
                     {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">職場でがん検診を受けられますか？</label>
+              <p className="text-xs text-slate-400">※ 市の検診との重複確認・政策分析に使います</p>
+              <div className="flex gap-2">
+                {([true, false] as const).map((v) => (
+                  <button
+                    key={String(v)}
+                    onClick={() => setHasWorkplaceCheckup(v)}
+                    className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                      hasWorkplaceCheckup === v
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                        : "border-slate-200 text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    {v ? "はい（受けられる）" : "ない・わからない"}
                   </button>
                 ))}
               </div>
@@ -199,12 +283,16 @@ export default function HomePage() {
         </Card>
       )}
 
-      {/* Step 2: 受診歴・障壁 */}
+      {/* Step 2: 今の気持ち */}
       {step === 2 && (
         <Card className="border-slate-200">
-          <CardContent className="p-6 space-y-5">
+          <CardContent className="p-6 space-y-6">
+            {/* 最後の受診年（任意） */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">最後にがん検診を受けた年（わかる場合）</label>
+              <label className="text-sm font-medium text-slate-700">
+                最後にがん検診を受けた年
+                <span className="ml-1 text-xs font-normal text-slate-400">（わかる場合）</span>
+              </label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -215,34 +303,45 @@ export default function HomePage() {
                   placeholder="例: 2023"
                   className="w-32 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 />
-                <span className="text-sm text-slate-500">年（なければ空欄）</span>
+                <span className="text-sm text-slate-500">年</span>
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">受診しなかった理由（複数選択可）</label>
-              <div className="grid grid-cols-1 gap-2">
-                {(Object.entries(BARRIER_LABELS) as [BarrierType, string][]).map(([key, label]) => (
+
+            {/* マインドセット質問（間接的・低負荷） */}
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium text-slate-700">
+                  検診について、今のあなたに一番近いのは？
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">ひとつだけ選んでください（答えにくければ飛ばせます）</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {MINDSET_OPTIONS.map((opt) => (
                   <button
-                    key={key}
-                    onClick={() => toggleBarrier(key)}
-                    className={`text-left px-3 py-2 rounded-lg border text-sm transition-all flex items-center gap-2 ${
-                      barriers.includes(key)
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                        : "border-slate-200 text-slate-600 hover:border-slate-300"
+                    key={opt.id}
+                    onClick={() => setMindset(prev => prev === opt.id ? null : opt.id)}
+                    className={`flex flex-col items-start gap-1.5 p-3.5 rounded-xl border-2 text-left transition-all ${
+                      mindset === opt.id
+                        ? "border-emerald-500 bg-emerald-50"
+                        : "border-slate-200 hover:border-slate-300 bg-white"
                     }`}
                   >
-                    <span className="w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center text-xs font-bold
-                      ${barriers.includes(key) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300'}">
-                      {barriers.includes(key) ? "✓" : ""}
-                    </span>
-                    {label}
+                    <span className="text-2xl">{opt.emoji}</span>
+                    <span className={`text-xs font-medium leading-snug ${
+                      mindset === opt.id ? "text-emerald-700" : "text-slate-700"
+                    }`}>{opt.label}</span>
+                    <span className="text-xs text-slate-400">{opt.sub}</span>
                   </button>
                 ))}
               </div>
             </div>
+
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep(1)} className="flex-1">← 戻る</Button>
-              <Button onClick={handleStart} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium">
+              <Button
+                onClick={handleStart}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+              >
                 検診を確認する →
               </Button>
             </div>

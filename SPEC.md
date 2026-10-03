@@ -55,12 +55,14 @@
 ```typescript
 {
   id, age, gender,
-  occupation: "company" | "self_employed" | "part_time" | "householder" | "other",
-  familyStructure: "alone" | "couple" | "family_with_children" | "three_generation" | "other",
+  occupation: "employee_large" | "employee_small" | "self_employed" | "part_time" | "other",
+  familyStructure: "alone" | "couple" | "family_with_children" | "multi_generation" | "other",
   healthAwarenessScore: 1〜5,
+  hasWorkplaceCheckup?: boolean | null,  // 職場健診の有無（構造的障壁分析用）
   lastScreeningYear?: number,
-  barriers: string[],  // 受診しない理由（複数選択）
-  notificationGroup: "self_only" | "self_and_family" | "community",  // RCT割付
+  barriers: BarrierType[],  // 受診しない理由（カテゴリ分類済み、17種類）
+  notificationGroup: "self_only" | "self_and_family" | "community",  // RCT第1軸
+  messageFrame?: "loss_frame" | "gain_frame" | "social_norm" | "authority",  // RCT第2軸
   registeredAt: string,
 }
 ```
@@ -88,16 +90,20 @@
 
 ---
 
-## RCT設計
+## RCT設計（2×2 Factorial）
 
-| グループ | 割付条件 | 通知内容 |
-|--------|--------|--------|
-| A: self_only | 50%（ランダム） | 本人への検診通知のみ |
-| B: self_and_family | 50%（ランダム） | 本人＋信頼する人への相互通知 |
-| （C: community） | 将来実装 | コミュニティ全体への情報拡散 |
+| アーム | 通知対象 | メッセージフレーム | 割付 |
+|-------|---------|----------------|------|
+| A1 | 本人のみ | 損失回避型 | 25% |
+| A2 | 本人のみ | 利得強調型 | 25% |
+| B1 | 本人＋信頼する人 | 損失回避型 | 25% |
+| B2 | 本人＋信頼する人 | 利得強調型 | 25% |
 
+**第1軸（通知対象）**：self_only / self_and_family
+**第2軸（メッセージフレーム）**：loss_frame / gain_frame / social_norm / authority（登録時ランダム割付）
 **観察指標**：通知開封率・レターページ訪問率・受診完了率
 **タイミング変数**：今すぐ / 1ヶ月前 / 2週間前 / 当日朝
+**必要サンプル数**：α=0.05・検出力80%で各アーム約60名（合計240名）
 
 ---
 
@@ -164,3 +170,7 @@ interface MunicipalityConfig {
 | 2026-09-30 | 世界標準比較ページ（/standards）、案内レターページ（/letter）、PDF生成追加 |
 | 2026-10-01 | /standards に一覧比較テーブル追加（視覚的負担軽減） |
 | 2026-10-01 | 他自治体展開方針をSPEC.mdに記載 |
+| 2026-10-03 | 障壁分析の構造的改善：17種類の障壁を6カテゴリに分類、介入マッピング追加 |
+| 2026-10-03 | RCTを2×2 Factorial設計に拡張（通知対象×メッセージフレーム） |
+| 2026-10-03 | オンボーディングに「職場健診の有無」質問追加、障壁をカテゴリ別グループ表示 |
+| 2026-10-03 | 管理ダッシュボード「障壁分析」タブを構造的分析ビューに刷新 |

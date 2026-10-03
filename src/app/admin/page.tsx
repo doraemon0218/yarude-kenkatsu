@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getFunnelStats, getNotificationLogs, getTrustedPeople, getUser } from "@/lib/store";
+import { getFunnelStats } from "@/lib/store";
 import type { FunnelStats } from "@/lib/types";
+import { BARRIER_CATEGORY_META, MESSAGE_FRAME_LABELS } from "@/lib/screening-data";
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -36,7 +38,6 @@ function calcRate(num: number, denom: number) {
   return Math.round((num / denom) * 100);
 }
 
-// Mock data for demonstration
 const MOCK_FUNNEL: FunnelStats[] = [
   { group: "self_only", sent: 120, opened: 68, scheduled: 32, screened: 18 },
   { group: "self_and_family", sent: 118, opened: 89, scheduled: 61, screened: 42 },
@@ -52,13 +53,69 @@ const MOCK_TIMELINE = [
   { month: "9月", self_only: 11, self_and_family: 35, community: 12 },
 ];
 
-const BARRIER_BREAKDOWN = [
-  { barrier: "多忙", screened: 22, not_screened: 78 },
-  { barrier: "無症状", screened: 35, not_screened: 65 },
-  { barrier: "怖い", screened: 18, not_screened: 82 },
-  { barrier: "費用", screened: 40, not_screened: 60 },
-  { barrier: "情報なし", screened: 55, not_screened: 45 },
+// 障壁カテゴリ別モックデータ（登録ユーザーの回答集計）
+const BARRIER_CATEGORY_DATA = [
+  {
+    category: "structural" as const,
+    barriers: [
+      { name: "仕事を休めない", pct: 44, n: 52 },
+      { name: "職場に健診制度がない", pct: 38, n: 45 },
+      { name: "交通・移動が不便", pct: 15, n: 18 },
+    ],
+  },
+  {
+    category: "habitual" as const,
+    barriers: [
+      { name: "仕事・育児が忙しい", pct: 56, n: 67 },
+      { name: "症状がないから大丈夫", pct: 42, n: 50 },
+      { name: "毎回忘れてしまう", pct: 35, n: 42 },
+      { name: "緊急性を感じない", pct: 29, n: 35 },
+    ],
+  },
+  {
+    category: "informational" as const,
+    barriers: [
+      { name: "どこで受けられるか不明", pct: 32, n: 38 },
+      { name: "申込方法がわからない", pct: 24, n: 29 },
+      { name: "対象かどうかわからない", pct: 19, n: 23 },
+    ],
+  },
+  {
+    category: "economic" as const,
+    barriers: [
+      { name: "費用が心配", pct: 28, n: 33 },
+      { name: "補助制度を知らなかった", pct: 22, n: 26 },
+    ],
+  },
+  {
+    category: "psychological" as const,
+    barriers: [
+      { name: "結果が怖い", pct: 31, n: 37 },
+      { name: "陽性後の対応が不安", pct: 18, n: 21 },
+      { name: "見つかっても仕方がない", pct: 8, n: 10 },
+    ],
+  },
+  {
+    category: "social" as const,
+    barriers: [
+      { name: "一緒に行く人がいない", pct: 21, n: 25 },
+    ],
+  },
 ];
+
+// 2×2 factorial RCT モックデータ
+const RCT_FACTORIAL = [
+  { arm: "A1", target: "本人のみ", frame: "loss_frame" as const, n: 62, screened: 13, rate: 21 },
+  { arm: "A2", target: "本人のみ", frame: "gain_frame" as const, n: 58, screened: 14, rate: 24 },
+  { arm: "B1", target: "本人＋家族", frame: "loss_frame" as const, n: 61, screened: 20, rate: 33 },
+  { arm: "B2", target: "本人＋家族", frame: "gain_frame" as const, n: 57, screened: 22, rate: 38 },
+];
+
+const RCT_CHART_DATA = RCT_FACTORIAL.map((a) => ({
+  name: a.arm,
+  受診率: a.rate,
+  fill: a.target === "本人＋家族" ? "#10b981" : "#94a3b8",
+}));
 
 export default function AdminPage() {
   const [stats, setStats] = useState<FunnelStats[]>(MOCK_FUNNEL);
@@ -110,8 +167,8 @@ export default function AdminPage() {
         {[
           { label: "累計通知数", value: "283", unit: "件", change: "+12% 先月比" },
           { label: "受診完了率（本人+家族）", value: "36%", unit: "", change: "+18pt vs 本人のみ" },
-          { label: "最も効果的なタイミング", value: "2週間前", unit: "", change: "締切リマインド" },
-          { label: "背景因子TOP障壁", value: "多忙", unit: "", change: "78%が未受診" },
+          { label: "最効果的RCTアーム", value: "B2", unit: "", change: "家族通知×利得強調型" },
+          { label: "最多障壁", value: "構造的", unit: "", change: "自営業・休暇取得困難" },
         ].map((kpi) => (
           <Card key={kpi.label} className="border-slate-200">
             <CardContent className="p-3">
@@ -128,7 +185,7 @@ export default function AdminPage() {
         {[
           { key: "funnel", label: "ファネル" },
           { key: "timeline", label: "時系列" },
-          { key: "barriers", label: "背景因子" },
+          { key: "barriers", label: "障壁分析" },
           { key: "rct", label: "RCT設計" },
         ].map((tab) => (
           <button
@@ -164,7 +221,6 @@ export default function AdminPage() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-
           <div className="space-y-3">
             {stats.map((s) => (
               <Card key={s.group} className="border-slate-200">
@@ -221,93 +277,216 @@ export default function AdminPage() {
         </Card>
       )}
 
-      {/* Barriers tab */}
+      {/* Barriers tab — 構造分析 */}
       {activeTab === "barriers" && (
         <div className="space-y-4">
-          <Card className="border-slate-200">
+          {/* 門真市の構造的背景 */}
+          <Card className="border-blue-200 bg-blue-50">
             <CardContent className="p-4">
-              <h3 className="text-sm font-medium text-slate-700 mb-3">受診障壁別の受診率</h3>
-              <p className="text-xs text-slate-500 mb-3">登録時に申告した障壁と実際の受診率の関係</p>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart
-                  data={BARRIER_BREAKDOWN}
-                  layout="vertical"
-                  margin={{ top: 0, right: 10, left: 20, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis type="number" tick={{ fontSize: 10 }} unit="%" />
-                  <YAxis type="category" dataKey="barrier" tick={{ fontSize: 11 }} width={40} />
-                  <Tooltip formatter={(v) => `${v}%`} />
-                  <Bar dataKey="screened" fill="#10b981" name="受診した" stackId="a" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="not_screened" fill="#e2e8f0" name="未受診" stackId="a" />
-                </BarChart>
-              </ResponsiveContainer>
-              <p className="text-xs text-slate-400 mt-2">「情報がない」層は介入すれば受診率が高い → 高ポテンシャル層</p>
+              <p className="text-sm font-semibold text-blue-800 mb-1">門真市の構造的背景</p>
+              <p className="text-xs text-blue-700 leading-relaxed">
+                門真市は製造業・中小企業・自営業の比率が高く、企業健診から外れた市民が多い。
+                職場健診カバー外の層が市のがん検診の主要ターゲットとなるが、
+                この層は「休めない」「制度を知らない」という構造的障壁を複合的に抱えている。
+              </p>
             </CardContent>
           </Card>
+
+          {/* カテゴリ別障壁マップ */}
+          {BARRIER_CATEGORY_DATA.map(({ category, barriers }) => {
+            const meta = BARRIER_CATEGORY_META[category];
+            return (
+              <Card key={category} className={`border ${meta.borderColor}`}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${meta.bgColor} ${meta.textColor}`}>
+                        優先度 {meta.priority}
+                      </span>
+                      <span className="text-sm font-medium text-slate-700">{meta.label}</span>
+                    </div>
+                  </div>
+
+                  {/* 障壁リスト */}
+                  <div className="space-y-1.5">
+                    {barriers.map((b) => (
+                      <div key={b.name} className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-xs text-slate-600">{b.name}</span>
+                            <span className="text-xs font-medium text-slate-500">{b.pct}%（n={b.n}）</span>
+                          </div>
+                          <div className="h-1.5 bg-slate-100 rounded-full">
+                            <div
+                              className="h-1.5 rounded-full"
+                              style={{ width: `${b.pct}%`, backgroundColor: meta.color }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* インサイトと介入策 */}
+                  <div className="border-t border-slate-100 pt-2 space-y-1">
+                    <p className="text-xs text-slate-500">{meta.insight}</p>
+                    <p className={`text-xs font-medium ${meta.textColor}`}>→ 介入策：{meta.intervention}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* 介入優先度サマリ */}
           <Card className="border-amber-100 bg-amber-50">
             <CardContent className="p-4">
-              <p className="text-sm font-medium text-amber-800 mb-2">政策インサイト</p>
+              <p className="text-sm font-medium text-amber-800 mb-2">政策優先度インサイト</p>
               <ul className="text-xs text-amber-700 space-y-1.5 list-disc list-inside">
-                <li>「多忙」「症状なし」層は通知タイミング調整で改善可能</li>
-                <li>「情報なし」層はシンプルな周知で受診率が跳ね上がる</li>
-                <li>「怖い」層には受診後フォロー（陽性だった場合の支援情報）が必要</li>
+                <li>【優先1】土日・夜間検診枠の拡充で構造的障壁（休暇不可層）を直撃</li>
+                <li>【優先2】このアプリによる情報提供・リマインドで習慣的障壁層に即効</li>
+                <li>【優先3】費用補助の見える化（「大腸がん300円」等）で経済的障壁を解消</li>
+                <li>【優先4】陽性後サポート体制の明示で心理的障壁を低減</li>
+                <li>【コア】家族・友人への同行勧奨（B群）が社会的障壁への最有効介入</li>
               </ul>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* RCT Design tab */}
+      {/* RCT tab — 2×2 factorial */}
       {activeTab === "rct" && (
         <div className="space-y-4">
+          {/* 設計概要 */}
           <Card className="border-slate-200">
-            <CardContent className="p-4 space-y-4">
-              <h3 className="text-sm font-medium text-slate-700">RCT設計（世帯単位ランダム化比較）</h3>
-              <div className="space-y-3">
-                {[
-                  {
-                    group: "A群",
-                    name: "本人のみ通知",
-                    n: 120,
-                    color: "bg-slate-100",
-                    textColor: "text-slate-700",
-                    desc: "従来型。本人への通知のみ。",
-                  },
-                  {
-                    group: "B群",
-                    name: "本人＋家族通知",
-                    n: 118,
-                    color: "bg-emerald-50",
-                    textColor: "text-emerald-700",
-                    desc: "本人に加え、登録された信頼する人にも通知。",
-                  },
-                  {
-                    group: "C群",
-                    name: "コミュニティ通知",
-                    n: 45,
-                    color: "bg-blue-50",
-                    textColor: "text-blue-700",
-                    desc: "職場・地域コミュニティ単位での一斉通知。",
-                  },
-                ].map((g) => (
-                  <div key={g.group} className={`rounded-xl p-3 ${g.color}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-bold text-sm ${g.textColor}`}>{g.group}</span>
-                        <span className="text-sm text-slate-700">{g.name}</span>
-                      </div>
-                      <span className="text-xs text-slate-500">n={g.n}</span>
-                    </div>
-                    <p className="text-xs text-slate-500">{g.desc}</p>
-                  </div>
-                ))}
+            <CardContent className="p-4 space-y-3">
+              <h3 className="text-sm font-medium text-slate-700">2×2 Factorial RCT設計</h3>
+              <p className="text-xs text-slate-500">
+                2つの介入変数を同時に検証する要因計画法。
+                同一サンプル数でより多くの情報を取得できる。
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-slate-600 mb-1">第1軸：通知対象</p>
+                  <p className="text-xs text-slate-500">A: 本人のみ通知（対照）</p>
+                  <p className="text-xs text-slate-500">B: 本人＋信頼する人に通知</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-slate-600 mb-1">第2軸：メッセージフレーム</p>
+                  <p className="text-xs text-slate-500">1: 損失回避型（「今受けないと…」）</p>
+                  <p className="text-xs text-slate-500">2: 利得強調型（「受けることで…」）</p>
+                </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* 4アーム比較テーブル */}
           <Card className="border-slate-200">
             <CardContent className="p-4 space-y-3">
-              <h3 className="text-sm font-medium text-slate-700">通知タイミング変数</h3>
+              <h3 className="text-sm font-medium text-slate-700">4アーム 受診率比較</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-2 text-slate-500 font-medium">アーム</th>
+                      <th className="text-left py-2 text-slate-500 font-medium">通知対象</th>
+                      <th className="text-left py-2 text-slate-500 font-medium">メッセージ</th>
+                      <th className="text-right py-2 text-slate-500 font-medium">n</th>
+                      <th className="text-right py-2 text-slate-500 font-medium">受診率</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {RCT_FACTORIAL.map((arm) => {
+                      const frameMeta = MESSAGE_FRAME_LABELS[arm.frame];
+                      const isWinner = arm.arm === "B2";
+                      return (
+                        <tr key={arm.arm} className={`border-b border-slate-100 ${isWinner ? "bg-emerald-50" : ""}`}>
+                          <td className="py-2.5 font-bold text-slate-700">
+                            {arm.arm}
+                            {isWinner && <span className="ml-1 text-emerald-600">★</span>}
+                          </td>
+                          <td className="py-2.5 text-slate-600">{arm.target}</td>
+                          <td className="py-2.5 text-slate-600">{frameMeta.label}</td>
+                          <td className="py-2.5 text-right text-slate-500">{arm.n}</td>
+                          <td className="py-2.5 text-right font-bold text-emerald-700">{arm.rate}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-slate-400">★ B2（本人＋家族 × 利得強調）が最高受診率（仮想データ）</p>
+            </CardContent>
+          </Card>
+
+          {/* 棒グラフ */}
+          <Card className="border-slate-200">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-medium text-slate-700 mb-3">アーム別受診率</h3>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={RCT_CHART_DATA} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 50]} />
+                  <Tooltip formatter={(v) => `${v}%`} />
+                  <Bar dataKey="受診率" radius={[4, 4, 0, 0]}>
+                    {RCT_CHART_DATA.map((entry, index) => (
+                      <Cell key={index} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* メッセージフレーム詳細 */}
+          <Card className="border-slate-200">
+            <CardContent className="p-4 space-y-3">
+              <h3 className="text-sm font-medium text-slate-700">メッセージフレーム（今後の拡張アーム）</h3>
+              <div className="space-y-2">
+                {(Object.entries(MESSAGE_FRAME_LABELS) as [keyof typeof MESSAGE_FRAME_LABELS, typeof MESSAGE_FRAME_LABELS[keyof typeof MESSAGE_FRAME_LABELS]][]).map(
+                  ([key, val]) => (
+                    <div key={key} className="bg-slate-50 rounded-xl p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-semibold text-slate-700">{val.label}</span>
+                        <span className="text-xs text-slate-400">— {val.desc}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 italic">「{val.example}」</p>
+                    </div>
+                  )
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 一次アウトカム */}
+          <Card className="border-slate-200">
+            <CardContent className="p-4 space-y-2">
+              <h3 className="text-sm font-medium text-slate-700">測定する一次アウトカム</h3>
+              <div className="space-y-1.5">
+                {[
+                  "市のがん検診受診記録との突合による受診率（主要エンドポイント）",
+                  "通知開封率（メッセージアプリの既読確認）",
+                  "予定カレンダー登録率",
+                  "精密検査への移行率（早期発見率の代理指標）",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-2">
+                    <span className="text-emerald-500 flex-shrink-0 mt-0.5">✓</span>
+                    <span className="text-xs text-slate-600">{item}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-slate-50 rounded-lg p-3 mt-2">
+                <p className="text-xs text-slate-500">
+                  個人情報は市の検診記録と匿名IDで突合。必要サンプルサイズ：α=0.05、検出力80%で各アーム約60名（合計240名）。
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 通知タイミング変数 */}
+          <Card className="border-slate-200">
+            <CardContent className="p-4 space-y-3">
+              <h3 className="text-sm font-medium text-slate-700">通知タイミング（層別変数）</h3>
               <div className="space-y-2">
                 {[
                   { timing: "即時（申込開始）", rate: 28, label: "28%" },
@@ -327,30 +506,7 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-slate-400">受診率（仮想データ）。2週間前リマインドが最も効果的。</p>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200">
-            <CardContent className="p-4 space-y-2">
-              <h3 className="text-sm font-medium text-slate-700">測定する一次アウトカム</h3>
-              <div className="space-y-1.5">
-                {[
-                  "市のがん検診受診記録との突合による受診率",
-                  "通知開封率（メッセージアプリの既読確認）",
-                  "予定カレンダー登録率",
-                  "精密検査への移行率（がん早期発見率の代理指標）",
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-2">
-                    <span className="text-emerald-500 flex-shrink-0 mt-0.5">✓</span>
-                    <span className="text-xs text-slate-600">{item}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="bg-slate-50 rounded-lg p-3 mt-2">
-                <p className="text-xs text-slate-500">
-                  個人情報は市の検診記録と匿名IDで突合。結果は次年度施策の根拠として活用します（EBPM）。
-                </p>
-              </div>
+              <p className="text-xs text-slate-400">2週間前リマインドが最も効果的（仮想データ）。今後の層別解析変数として記録。</p>
             </CardContent>
           </Card>
         </div>
