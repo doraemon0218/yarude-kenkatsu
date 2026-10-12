@@ -125,7 +125,7 @@ export default function HomePage() {
       registeredAt: new Date().toISOString(),
     };
     saveUser(user);
-    router.push("/screening");
+    router.push("/plan");
   };
 
   return (
@@ -366,7 +366,7 @@ export default function HomePage() {
                 onClick={handleStart}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
               >
-                検診を確認する →
+                私のプランを見る →
               </Button>
             </div>
           </CardContent>

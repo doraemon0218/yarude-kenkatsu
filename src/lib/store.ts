@@ -10,7 +10,11 @@ const KEYS = {
   user: "yarude_user",
   trustedPeople: "yarude_trusted_people",
   notificationLogs: "yarude_notification_logs",
+  screeningRecords: "yarude_screening_records",
 } as const;
+
+// 検診・検査ごとの最終受診月（"YYYY-MM"）
+export type ScreeningRecords = Record<string, string>;
 
 function getItem<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
@@ -54,6 +58,22 @@ export function removeTrustedPerson(id: string): void {
     KEYS.trustedPeople,
     existing.filter((p) => p.id !== id)
   );
+}
+
+export function getScreeningRecords(): ScreeningRecords {
+  return getItem<ScreeningRecords>(KEYS.screeningRecords) ?? {};
+}
+
+export function saveScreeningRecords(records: ScreeningRecords): void {
+  setItem(KEYS.screeningRecords, records);
+}
+
+export function setScreeningRecord(itemId: string, yearMonth: string | null): ScreeningRecords {
+  const next = { ...getScreeningRecords() };
+  if (yearMonth) next[itemId] = yearMonth;
+  else delete next[itemId];
+  saveScreeningRecords(next);
+  return next;
 }
 
 export function getNotificationLogs(): NotificationLog[] {

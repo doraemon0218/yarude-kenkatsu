@@ -79,7 +79,7 @@ export const SCREENING_GUIDELINES: ScreeningRecommendation[] = [
     id: "gastric",
     cancerType: "胃がん",
     cancerTypeEn: "Gastric Cancer",
-    description: "胃内視鏡検査（または胃X線検査）",
+    description: "胃X線検査（バリウム）／胃内視鏡検査",
     targetGender: "all",
     minAge: 50,
     intervalMonths: 24,
@@ -492,8 +492,8 @@ export const KADOMA_SCREENING_COSTS: Record<string, string> = {
   colon: "300円",
   lung: "100円",
   gastric: "800円",
-  breast: "400円",
-  cervical: "400円",
+  breast: "1,200〜1,500円",
+  cervical: "500円",
 };
 
 export const FAMILY_STRUCTURE_LABELS: Record<string, string> = {

@@ -31,6 +31,16 @@ export const DEMO_USERS: UserProfile[] = [
   },
 ];
 
+// マイ健診プラン用の受診記録（"YYYY-MM"）
+export const DEMO_SCREENING_RECORDS: Record<string, Record<string, string>> = {
+  "demo-user-tanaka": {
+    colon: "2021-06",
+    lung: "2021-06",
+    hepatitis: "2021-06",
+  },
+  "demo-user-sato": {},
+};
+
 export const DEMO_USER_META = [
   {
     id: "demo-user-tanaka",

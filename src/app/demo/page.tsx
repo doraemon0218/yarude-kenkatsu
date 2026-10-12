@@ -11,8 +11,9 @@ import {
   DEMO_TRUSTED_BY_USER,
   DEMO_NOTIFICATION_LOGS,
   DEMO_TIMELINE,
+  DEMO_SCREENING_RECORDS,
 } from "@/lib/demo-data";
-import { saveUser, saveTrustedPeople, getNotificationLogs } from "@/lib/store";
+import { saveUser, saveTrustedPeople, saveScreeningRecords, getNotificationLogs } from "@/lib/store";
 import { getRecommendedScreenings } from "@/lib/screening-data";
 
 function loadDemoUser(userId: string) {
@@ -20,6 +21,7 @@ function loadDemoUser(userId: string) {
   const trusted = DEMO_TRUSTED_BY_USER[userId];
   saveUser(user);
   saveTrustedPeople(trusted);
+  saveScreeningRecords(DEMO_SCREENING_RECORDS[userId] ?? {});
 }
 
 const TYPE_STYLES: Record<string, { bg: string; icon: string; label: string }> = {
@@ -47,7 +49,7 @@ export default function DemoPage() {
   };
 
   const handleGoToApp = () => {
-    router.push("/screening");
+    router.push("/plan");
   };
 
   return (
@@ -74,7 +76,7 @@ export default function DemoPage() {
           {DEMO_USER_META.map((meta) => (
             <button
               key={meta.id}
-              onClick={() => { loadDemoUser(meta.id); router.push("/screening"); }}
+              onClick={() => { loadDemoUser(meta.id); router.push("/plan"); }}
               className={`flex flex-col items-center gap-1.5 py-4 px-3 rounded-xl border-2 font-medium text-sm transition-all
                 ${activeUser === meta.id
                   ? "border-emerald-600 bg-emerald-600 text-white shadow-md scale-105"
@@ -290,7 +292,7 @@ export default function DemoPage() {
           {DEMO_USER_META.map((meta) => (
             <button
               key={meta.id}
-              onClick={() => { loadDemoUser(meta.id); router.push("/screening"); }}
+              onClick={() => { loadDemoUser(meta.id); router.push("/plan"); }}
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 hover:bg-emerald-50 hover:border-emerald-400 transition-all"
             >
               {meta.emoji} {meta.name}

@@ -417,6 +417,9 @@ export default function HealthFactorsPage() {
                             <div className="bg-violet-50 border border-violet-200 rounded-xl p-3">
                               <p className="text-xs font-medium text-violet-800 mb-1">💡 自費・近隣医療機関での受け方</p>
                               <p className="text-xs text-violet-700 leading-relaxed">{factor.selfPay}</p>
+                              <Link href="/self-pay" className="mt-1.5 inline-block text-xs text-violet-800 font-medium hover:underline">
+                                門真市内・近くで受けられる場所を見る →
+                              </Link>
                             </div>
                           )}
 

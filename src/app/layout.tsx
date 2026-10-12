@@ -19,16 +19,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-slate-50">
         <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
           <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0 mr-2">
               <span className="text-lg font-bold text-emerald-700">YARUDE健活</span>
               <span className="text-xs text-slate-400 hidden sm:block">門真市共創プロジェクト</span>
             </Link>
-            <nav className="flex items-center gap-1">
+            <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
               <Link href="/demo" className="text-xs px-2.5 py-1.5 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors font-medium">
                 デモ
               </Link>
+              <Link href="/plan" className="text-xs px-2.5 py-1.5 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition-colors font-medium">
+                マイプラン
+              </Link>
               <Link href="/screening" className="text-xs px-2.5 py-1.5 rounded-full text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
                 検診
+              </Link>
+              <Link href="/self-pay" className="text-xs px-2.5 py-1.5 rounded-full text-slate-600 hover:bg-violet-50 hover:text-violet-700 transition-colors">
+                自費検査
               </Link>
               <Link href="/standards" className="text-xs px-2.5 py-1.5 rounded-full text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors">
                 世界基準

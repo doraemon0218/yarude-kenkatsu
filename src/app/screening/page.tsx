@@ -152,6 +152,19 @@ export default function ScreeningPage() {
         ))}
       </div>
 
+      {/* マイプランへの導線 */}
+      <Link
+        href="/plan"
+        className="flex items-center gap-3 bg-orange-50 border-2 border-orange-300 rounded-2xl p-4 hover:bg-orange-100 transition-colors"
+      >
+        <span className="text-2xl">📅</span>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-orange-900">今年やること・できていることを見る</p>
+          <p className="text-xs text-orange-700 mt-0.5">受けた検診を記録すると、次はいつ受けるかが一目でわかります</p>
+        </div>
+        <span className="text-orange-500">→</span>
+      </Link>
+
       {/* CTA */}
       <div className="grid grid-cols-2 gap-3">
         <Link href="/facilities">

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { getUser, getTrustedPeople, addNotificationLog } from "@/lib/store";
 import { getRecommendedScreenings } from "@/lib/screening-data";
 import type { UserProfile, TrustedPerson, NotificationLog, NotificationMethodType } from "@/lib/types";
@@ -19,26 +18,44 @@ const TIMING_OPTIONS = [
 const NUDGE_MESSAGES = [
   {
     id: "family",
-    label: "家族・愛する人へ",
+    frame: "gain_frame",
+    label: "家族・愛する人へ（利得強調）",
     message: (name: string) =>
       `${name}さん、あなたに元気でいてほしいから、今年のがん検診、一緒に受けに行かない？門真市なら安く受けられるよ。`,
     icon: "💚",
   },
   {
     id: "work",
-    label: "仕事仲間・同僚へ",
+    frame: "social_norm",
+    label: "仕事仲間・同僚へ（社会規範）",
     message: (name: string) =>
-      `${name}さん、いつも一緒に頑張ってる仲間として…今年のがん検診、もう受けた？まだなら一緒に予約しない？`,
+      `${name}さん、いつも一緒に頑張ってる仲間として…今年のがん検診、もう受けた？門真市では多くの人が受けているみたいだよ。まだなら一緒に予約しない？`,
     icon: "🤝",
   },
   {
     id: "loss",
+    frame: "loss_frame",
     label: "損失回避（プロスペクト理論）",
     message: (name: string) =>
       `${name}さん、がんは早期発見なら90%以上が治ります。でも気づいた時には手遅れになることも。あなたのことが心配だから、ぜひ検診を受けてほしい。`,
     icon: "🎯",
   },
+  {
+    id: "authority",
+    frame: "authority",
+    label: "専門家の推奨（権威訴求）",
+    message: (name: string) =>
+      `${name}さん、厚生労働省の指針では、あなたの年齢・性別にはがん検診が強く推奨されています。門真市では300円から受けられます。ぜひ今年こそ受けてみてください。`,
+    icon: "🏥",
+  },
 ];
+
+const FRAME_TO_NUDGE: Record<string, string> = {
+  gain_frame: "family",
+  social_norm: "work",
+  loss_frame: "loss",
+  authority: "authority",
+};
 
 export default function NotifyPage() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -53,6 +70,9 @@ export default function NotifyPage() {
     const u = getUser();
     setUser(u);
     setTrustedPeople(getTrustedPeople());
+    if (u?.messageFrame && FRAME_TO_NUDGE[u.messageFrame]) {
+      setSelectedNudge(FRAME_TO_NUDGE[u.messageFrame]);
+    }
   }, []);
 
   const togglePerson = (id: string) => {
@@ -94,6 +114,7 @@ export default function NotifyPage() {
         userId: user.id,
         screeningId: screenings[0]?.id ?? "general",
         notificationGroup: user.notificationGroup,
+        messageFrame: user.messageFrame,
         method: selectedMethod,
         sentAt: new Date().toISOString(),
       };

@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { getUser } from "@/lib/store";
 import { getRecommendedScreenings, ALL_SCREENING_NAMES } from "@/lib/screening-data";
 import { KADOMA_FACILITIES } from "@/lib/facility-data";
-import type { Facility, DayOfWeek, ScreeningRecommendation } from "@/lib/types";
+import type { DayOfWeek } from "@/lib/types";
 
 const ALL_DAYS: DayOfWeek[] = ["月", "火", "水", "木", "金", "土", "日"];
 
@@ -37,19 +36,8 @@ function DayBadges({ openDays }: { openDays: DayOfWeek[] }) {
   );
 }
 
-type FilterKey = "all" | "saturday" | "evening" | "online";
-
-const FILTERS: { key: FilterKey; label: string; icon: string }[] = [
-  { key: "all",      label: "すべて",     icon: "📋" },
-  { key: "saturday", label: "土曜OK",     icon: "📅" },
-  { key: "evening",  label: "夕方以降",   icon: "🌆" },
-  { key: "online",   label: "Web予約",    icon: "🖥️" },
-];
-
 export default function FacilitiesPage() {
   const [userScreeningIds, setUserScreeningIds] = useState<string[]>([]);
-  const [filter, setFilter] = useState<FilterKey>("all");
-  const [myScreeningsOnly, setMyScreeningsOnly] = useState(false);
 
   useEffect(() => {
     const user = getUser();
@@ -59,98 +47,28 @@ export default function FacilitiesPage() {
     }
   }, []);
 
-  const filtered = KADOMA_FACILITIES.filter((f) => {
-    if (filter === "saturday" && !f.hasSaturdayHours) return false;
-    if (filter === "evening"  && !f.hasEveningHours)  return false;
-    if (filter === "online"   && !f.onlineReservation) return false;
-    if (myScreeningsOnly && userScreeningIds.length > 0) {
-      if (!userScreeningIds.some((id) => f.availableScreenings.includes(id))) return false;
-    }
-    return true;
-  });
+  const filtered = KADOMA_FACILITIES;
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-slate-800">施設を比較する</h1>
-        <p className="text-sm text-slate-500 mt-1">曜日・費用・受けられる検診をパッと確認</p>
+        <h1 className="text-xl font-bold text-slate-800">市の検診（補助あり）の受け方</h1>
+        <p className="text-sm text-slate-500 mt-1">門真市のがん検診は数百円で受けられます。申し込み先と費用を確認しましょう。</p>
       </div>
 
-      {/* Filter bar */}
-      <div className="space-y-2">
-        <div className="flex gap-2 flex-wrap">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${
-                filter === f.key
-                  ? "bg-emerald-600 text-white border-emerald-600"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-emerald-400"
-              }`}
-            >
-              {f.icon} {f.label}
-            </button>
-          ))}
+      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-2">
+        <p className="text-sm font-bold text-emerald-900">市の検診は2通りの受け方があります</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="bg-white rounded-xl p-3 border border-emerald-100">
+            <p className="text-sm font-semibold text-slate-800">🏢 集団検診</p>
+            <p className="text-xs text-slate-600 mt-1">保健福祉センターなどで決まった日にまとめて受けます。いくつかの検診を1日で済ませられます。</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 border border-emerald-100">
+            <p className="text-sm font-semibold text-slate-800">🏥 個別検診</p>
+            <p className="text-xs text-slate-600 mt-1">市内の協力医療機関で、自分の都合のよい日に受けます。どの医院で受けられるかは健康増進課に電話で聞けます。</p>
+          </div>
         </div>
-        {userScreeningIds.length > 0 && (
-          <button
-            onClick={() => setMyScreeningsOnly((v) => !v)}
-            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${
-              myScreeningsOnly
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-slate-500 border-slate-200 hover:border-blue-400"
-            }`}
-          >
-            {myScreeningsOnly ? "✓ " : ""}自分の検診が受けられる施設のみ
-          </button>
-        )}
       </div>
-
-      {/* Comparison table — visible context summary */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <table className="w-full text-xs min-w-[480px]">
-          <thead>
-            <tr className="border-b border-slate-100 bg-slate-50">
-              <th className="text-left px-3 py-2 font-medium text-slate-500 w-36">施設</th>
-              <th className="text-left px-3 py-2 font-medium text-slate-500">曜日</th>
-              <th className="text-left px-3 py-2 font-medium text-slate-500">時間</th>
-              <th className="text-left px-3 py-2 font-medium text-slate-500">Web予約</th>
-              <th className="text-left px-3 py-2 font-medium text-slate-500">距離</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((f, i) => (
-              <tr key={f.id} className={i !== filtered.length - 1 ? "border-b border-slate-100" : ""}>
-                <td className="px-3 py-2.5">
-                  <span className="font-medium text-slate-700 leading-snug line-clamp-2">{f.name}</span>
-                </td>
-                <td className="px-3 py-2.5">
-                  <DayBadges openDays={f.openDays} />
-                </td>
-                <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">
-                  {f.openHours}
-                  {f.hasEveningHours && (
-                    <span className="ml-1 text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 rounded px-1">夕方OK</span>
-                  )}
-                </td>
-                <td className="px-3 py-2.5 text-center">
-                  {f.onlineReservation ? (
-                    <span className="text-emerald-600 font-medium">✓</span>
-                  ) : (
-                    <span className="text-slate-300">—</span>
-                  )}
-                </td>
-                <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap">{f.distanceKm}km</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {filtered.length === 0 && (
-        <p className="text-sm text-slate-400 text-center py-6">条件に合う施設が見つかりませんでした。フィルターを変えてみてください。</p>
-      )}
 
       {/* Detail cards */}
       <div className="space-y-3">
@@ -165,7 +83,6 @@ export default function FacilitiesPage() {
                 <p className="font-bold text-slate-800 text-sm leading-snug">{f.name}</p>
                 <p className="text-xs text-slate-500 mt-0.5">{f.address}</p>
               </div>
-              <span className="text-xs text-slate-400 flex-shrink-0 whitespace-nowrap">{f.distanceKm}km</span>
             </div>
 
             {/* Open days + hours */}
@@ -251,6 +168,18 @@ export default function FacilitiesPage() {
           </div>
         ))}
       </div>
+
+      <Link
+        href="/self-pay"
+        className="flex items-center gap-3 bg-violet-50 border border-violet-200 rounded-2xl p-4 hover:bg-violet-100 transition-colors"
+      >
+        <span className="text-2xl">💡</span>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-violet-900">市の補助がない検査を受けたいとき</p>
+          <p className="text-xs text-violet-700 mt-0.5">肺がんCT・胃カメラ・骨密度・目の検査など、門真市内と近くで自費で受けられる場所</p>
+        </div>
+        <span className="text-violet-500">→</span>
+      </Link>
 
       <div className="grid grid-cols-2 gap-3">
         <Link href="/screening">
