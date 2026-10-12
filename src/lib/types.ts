@@ -81,6 +81,9 @@ export interface UserProfile {
   id: string;
   age: number;
   gender: Gender;
+  heightCm?: number;
+  weightKg?: number;
+  avatarStyle?: "hero" | "dress"; // ゲーミフィケーションのキャラクター
   occupation: OccupationType;
   familyStructure: FamilyStructure;
   healthAwarenessScore: 1 | 2 | 3 | 4 | 5;

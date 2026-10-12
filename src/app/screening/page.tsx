@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScreeningInsight } from "@/components/ScreeningInsight";
 import { getUser } from "@/lib/store";
 import { getRecommendedScreenings, KADOMA_SCREENING_COSTS } from "@/lib/screening-data";
 import type { UserProfile, ScreeningRecommendation } from "@/lib/types";
@@ -98,14 +99,16 @@ export default function ScreeningPage() {
                     <p className="text-sm text-slate-600">{s.description}</p>
                     <p className="text-sm text-slate-700 leading-relaxed">{s.plainLanguage}</p>
                   </div>
-                  <span className="text-slate-400 flex-shrink-0 mt-1">
+                  <span className="text-slate-400 flex-shrink-0 mt-1 text-xs text-right">
                     {expanded === s.id ? "▲" : "▼"}
+                    <span className="block text-[10px] text-sky-700">負担と<br />メリット</span>
                   </span>
                 </div>
               </button>
 
               {expanded === s.id && (
                 <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3">
+                  <ScreeningInsight itemId={s.id} />
                   <div>
                     <p className="text-xs font-medium text-slate-500 mb-1">こんな症状が出る前に受けてください</p>
                     <div className="flex flex-wrap gap-1.5">

@@ -72,6 +72,8 @@ export default function HomePage() {
   // Step 0
   const [age, setAge] = useState("");
   const [gender, setGender] = useState<Gender | "">("");
+  const [heightCm, setHeightCm] = useState("");
+  const [weightKg, setWeightKg] = useState("");
 
   // Step 1
   const [occupation, setOccupation] = useState<OccupationType | "">("");
@@ -114,6 +116,8 @@ export default function HomePage() {
       id: crypto.randomUUID(),
       age: ageNum,
       gender: gender as Gender,
+      heightCm: Number(heightCm) >= 120 && Number(heightCm) <= 220 ? Number(heightCm) : undefined,
+      weightKg: Number(weightKg) >= 25 && Number(weightKg) <= 250 ? Number(weightKg) : undefined,
       occupation: (occupation || "other") as OccupationType,
       familyStructure: (familyStructure || "other") as FamilyStructure,
       healthAwarenessScore: healthAwareness as 1 | 2 | 3 | 4 | 5,
@@ -202,6 +206,34 @@ export default function HomePage() {
                     {g === "male" ? "男性" : "女性"}
                   </button>
                 ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                身長・体重
+                <span className="ml-1 text-xs font-normal text-slate-400">（任意・体格に合わせたアドバイスに使います）</span>
+              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={heightCm}
+                  onChange={(e) => setHeightCm(e.target.value)}
+                  placeholder="160"
+                  aria-label="身長（cm）"
+                  className="w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                />
+                <span className="text-sm text-slate-500">cm</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={weightKg}
+                  onChange={(e) => setWeightKg(e.target.value)}
+                  placeholder="60"
+                  aria-label="体重（kg）"
+                  className="w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                />
+                <span className="text-sm text-slate-500">kg</span>
               </div>
             </div>
             <Button

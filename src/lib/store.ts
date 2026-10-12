@@ -76,6 +76,17 @@ export function setScreeningRecord(itemId: string, yearMonth: string | null): Sc
   return next;
 }
 
+// 複数まとめて記録（null は記録を消す）
+export function updateScreeningRecords(updates: Record<string, string | null>): ScreeningRecords {
+  const next = { ...getScreeningRecords() };
+  for (const [id, ym] of Object.entries(updates)) {
+    if (ym) next[id] = ym;
+    else delete next[id];
+  }
+  saveScreeningRecords(next);
+  return next;
+}
+
 export function getNotificationLogs(): NotificationLog[] {
   return getItem<NotificationLog[]>(KEYS.notificationLogs) ?? [];
 }
